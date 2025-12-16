@@ -32,7 +32,8 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 		internal static readonly string[] SupportedCapabilities = new string[]
 		{
-			"Unity",
+			"Unity",                               // Allows to load the VSTU package and activate Unity specific features
+			"EnableOnDemandExcludedFolderLoading", // Lazy-load excluded folders in VS (useful for huge projects with many side assets)
 		};
 
 		internal static readonly string[] UnsupportedCapabilities = new string[]

@@ -152,7 +152,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		private static bool ShouldSyncOnReimportedAsset(string asset)
 		{
 			// ".dll", ".asmdef"
-			var extension = new FileInfo(asset).Extension;
+			var extension = Path.GetExtension(asset);
 			return extension == ".dll" || extension == ".asmdef";
 		}
 
@@ -996,7 +996,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			{
 				// We have to normalize the path, because the PackageManagerRemapper assumes
 				// dir seperators will be os specific.
-				var absolutePath = Path.GetFullPath(path.NormalizePathSeparators());
+				var absolutePath = FileUtility.GetAbsolutePath(path.NormalizePathSeparators());
 				path = SkipPathPrefix(absolutePath, projectDir);
 			}
 

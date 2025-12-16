@@ -300,7 +300,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			string absolutePath = "";
 			if (!string.IsNullOrWhiteSpace(path))
 			{
-				absolutePath = IOPath.GetFullPath(path);
+				absolutePath = FileUtility.GetAbsolutePath(path);
 			}
 
 			// We remove all invalid chars from the solution filename, but we cannot prevent the user from using a specific path for the Unity project

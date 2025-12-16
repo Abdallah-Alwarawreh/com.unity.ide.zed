@@ -1,11 +1,20 @@
 # Code Editor Package for Visual Studio
 
+## [2.0.26] - 2025-12-16
+
+Integration:
+
+- Fix handling of asset-pipeline refresh-mode setting.
+
+Project generation:
+
+- Add `EnableOnDemandExcludedFolderLoading` capability when generating SDK-Style project.
+
 ## [2.0.25] - 2025-09-16
 
 Internal:
 
-- Fixes for release validation and release process
-
+- Fixes for release validation and release process.
 
 ## [2.0.24] - 2025-09-04
 
@@ -32,7 +41,6 @@ Project generation:
 - Identify `asset`, `meta`, `prefab` and `unity` files as `yaml` (Visual Studio Code).
 - Add `sln`/`csproj` file nesting (Visual Studio Code).
 - Improve SDK style project generation.
-
 
 ## [2.0.22] - 2023-10-03
 
