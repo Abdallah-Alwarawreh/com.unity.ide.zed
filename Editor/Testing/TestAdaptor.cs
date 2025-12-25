@@ -5,17 +5,14 @@ using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
 #endif
 
-namespace Microsoft.Unity.VisualStudio.Editor.Testing
-{
+namespace Zed.Unity.Editor.Testing {
 	[Serializable]
-	internal class TestAdaptorContainer
-	{
+	internal class TestAdaptorContainer {
 		public TestAdaptor[] TestAdaptors;
 	}
 
 	[Serializable]
-	internal class TestAdaptor
-	{
+	internal class TestAdaptor {
 		public string Id;
 		public string Name;
 		public string FullName;
@@ -26,8 +23,7 @@ namespace Microsoft.Unity.VisualStudio.Editor.Testing
 
 		public int Parent;
 
-		public TestAdaptor(ITestAdaptor testAdaptor, int parent)
-		{
+		public TestAdaptor(ITestAdaptor testAdaptor, int parent) {
 			Id = testAdaptor.Id;
 			Name = testAdaptor.Name;
 			FullName = testAdaptor.FullName;

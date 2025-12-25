@@ -10,10 +10,8 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	public interface IAssemblyNameProvider
-	{
+namespace Zed.Unity.Editor {
+	public interface IAssemblyNameProvider {
 		string[] ProjectSupportedExtensions { get; }
 		string ProjectGenerationRootNamespace { get; }
 		ProjectGenerationFlag ProjectGenerationFlag { get; }
@@ -28,8 +26,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		void ToggleProjectGeneration(ProjectGenerationFlag preference);
 	}
 
-	public class AssemblyNameProvider : IAssemblyNameProvider
-	{
+	public class AssemblyNameProvider : IAssemblyNameProvider {
 		private readonly Dictionary<string, UnityEditor.PackageManager.PackageInfo> m_PackageInfoCache = new Dictionary<string, UnityEditor.PackageManager.PackageInfo>();
 
 		ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)EditorPrefs.GetInt(
@@ -40,48 +37,39 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 		public string ProjectGenerationRootNamespace => EditorSettings.projectGenerationRootNamespace;
 
-		public ProjectGenerationFlag ProjectGenerationFlag
-		{
+		public ProjectGenerationFlag ProjectGenerationFlag {
 			get { return ProjectGenerationFlagImpl; }
-			private set { ProjectGenerationFlagImpl = value;}
+			private set { ProjectGenerationFlagImpl = value; }
 		}
 
-		internal virtual ProjectGenerationFlag ProjectGenerationFlagImpl
-		{
+		internal virtual ProjectGenerationFlag ProjectGenerationFlagImpl {
 			get => m_ProjectGenerationFlag;
-			private set
-			{
+			private set {
 				EditorPrefs.SetInt("unity_project_generation_flag", (int)value);
 				m_ProjectGenerationFlag = value;
 			}
 		}
 
-		public string GetAssemblyNameFromScriptPath(string path)
-		{
+		public string GetAssemblyNameFromScriptPath(string path) {
 			return CompilationPipeline.GetAssemblyNameFromScriptPath(path);
 		}
 
 		internal static readonly string AssemblyOutput = @"Temp\bin\Debug\".NormalizePathSeparators();
 		internal static readonly string PlayerAssemblyOutput = @"Temp\bin\Debug\Player\".NormalizePathSeparators();
 
-		public IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution)
-		{
+		public IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution) {
 			IEnumerable<Assembly> assemblies = GetAssembliesByType(AssembliesType.Editor, shouldFileBePartOfSolution, AssemblyOutput);
 
-			if (!ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.PlayerAssemblies))
-			{
+			if (!ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.PlayerAssemblies)) {
 				return assemblies;
 			}
 			var playerAssemblies = GetAssembliesByType(AssembliesType.Player, shouldFileBePartOfSolution, PlayerAssemblyOutput);
 			return assemblies.Concat(playerAssemblies);
 		}
 
-		private static IEnumerable<Assembly> GetAssembliesByType(AssembliesType type, Func<string, bool> shouldFileBePartOfSolution, string outputPath)
-		{
-			foreach (var assembly in CompilationPipeline.GetAssemblies(type))
-			{
-				if (assembly.sourceFiles.Any(shouldFileBePartOfSolution))
-				{
+		private static IEnumerable<Assembly> GetAssembliesByType(AssembliesType type, Func<string, bool> shouldFileBePartOfSolution, string outputPath) {
+			foreach (var assembly in CompilationPipeline.GetAssemblies(type)) {
+				if (assembly.sourceFiles.Any(shouldFileBePartOfSolution)) {
 					yield return new Assembly(
 						assembly.name,
 						outputPath,
@@ -99,44 +87,36 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		public string GetCompileOutputPath(string assemblyName)
-		{
+		public string GetCompileOutputPath(string assemblyName) {
 			// We need to keep this one for API surface check (AssemblyNameProvider is public), but not used anymore
 			throw new NotImplementedException();
 		}
 
-		public IEnumerable<string> GetAllAssetPaths()
-		{
+		public IEnumerable<string> GetAllAssetPaths() {
 			return AssetDatabase.GetAllAssetPaths();
 		}
 
-		private static string ResolvePotentialParentPackageAssetPath(string assetPath)
-		{
+		private static string ResolvePotentialParentPackageAssetPath(string assetPath) {
 			const string packagesPrefix = "packages/";
-			if (!assetPath.StartsWith(packagesPrefix, StringComparison.OrdinalIgnoreCase))
-			{
+			if (!assetPath.StartsWith(packagesPrefix, StringComparison.OrdinalIgnoreCase)) {
 				return null;
 			}
 
 			var followupSeparator = assetPath.IndexOf('/', packagesPrefix.Length);
-			if (followupSeparator == -1)
-			{
+			if (followupSeparator == -1) {
 				return assetPath.ToLowerInvariant();
 			}
 
 			return assetPath.Substring(0, followupSeparator).ToLowerInvariant();
 		}
 
-		public UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath)
-		{
+		public UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath) {
 			var parentPackageAssetPath = ResolvePotentialParentPackageAssetPath(assetPath);
-			if (parentPackageAssetPath == null)
-			{
+			if (parentPackageAssetPath == null) {
 				return null;
 			}
 
-			if (m_PackageInfoCache.TryGetValue(parentPackageAssetPath, out var cachedPackageInfo))
-			{
+			if (m_PackageInfoCache.TryGetValue(parentPackageAssetPath, out var cachedPackageInfo)) {
 				return cachedPackageInfo;
 			}
 
@@ -145,20 +125,16 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return result;
 		}
 
-		public bool IsInternalizedPackagePath(string path)
-		{
-			if (string.IsNullOrEmpty(path.Trim()))
-			{
+		public bool IsInternalizedPackagePath(string path) {
+			if (string.IsNullOrEmpty(path.Trim())) {
 				return false;
 			}
 			var packageInfo = FindForAssetPath(path);
-			if (packageInfo == null)
-			{
+			if (packageInfo == null) {
 				return false;
 			}
 			var packageSource = packageInfo.source;
-			switch (packageSource)
-			{
+			switch (packageSource) {
 				case PackageSource.Embedded:
 					return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Embedded);
 				case PackageSource.Registry:
@@ -178,8 +154,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return false;
 		}
 
-		public ResponseFileData ParseResponseFile(string responseFilePath, string projectDirectory, string[] systemReferenceDirectories)
-		{
+		public ResponseFileData ParseResponseFile(string responseFilePath, string projectDirectory, string[] systemReferenceDirectories) {
 			return CompilationPipeline.ParseResponseFile(
 			  responseFilePath,
 			  projectDirectory,
@@ -187,30 +162,24 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			);
 		}
 
-		public void ToggleProjectGeneration(ProjectGenerationFlag preference)
-		{
-			if (ProjectGenerationFlag.HasFlag(preference))
-			{
+		public void ToggleProjectGeneration(ProjectGenerationFlag preference) {
+			if (ProjectGenerationFlag.HasFlag(preference)) {
 				ProjectGenerationFlag ^= preference;
 			}
-			else
-			{
+			else {
 				ProjectGenerationFlag |= preference;
 			}
 		}
 
-		internal void ResetPackageInfoCache()
-		{
+		internal void ResetPackageInfoCache() {
 			m_PackageInfoCache.Clear();
 		}
 
-		public void ResetProjectGenerationFlag()
-		{
+		public void ResetProjectGenerationFlag() {
 			ProjectGenerationFlag = ProjectGenerationFlag.None;
 		}
 
-		public string GetAssemblyName(string assemblyOutputPath, string assemblyName)
-		{
+		public string GetAssemblyName(string assemblyOutputPath, string assemblyName) {
 			if (assemblyOutputPath == PlayerAssemblyOutput)
 				return assemblyName + ".Player";
 

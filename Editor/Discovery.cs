@@ -1,52 +1,27 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Unity Technologies.
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 using System.Collections.Generic;
 using System.IO;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal static class Discovery
-	{
-		public static IEnumerable<IVisualStudioInstallation> GetVisualStudioInstallations()
-		{
-#if UNITY_EDITOR_WIN
-			foreach (var installation in VisualStudioForWindowsInstallation.GetVisualStudioInstallations())
-				yield return installation;
-#endif
-
-			foreach (var installation in VisualStudioCodeInstallation.GetVisualStudioInstallations())
+namespace Zed.Unity.Editor {
+	internal static class Discovery {
+		public static IEnumerable<IEditorInstallation> GetZedInstallations() {
+			foreach (var installation in ZedInstallation.GetZedInstallations())
 				yield return installation;
 		}
 
-		public static bool TryDiscoverInstallation(string editorPath, out IVisualStudioInstallation installation)
-		{
-			try
-			{
-#if UNITY_EDITOR_WIN
-				if (VisualStudioForWindowsInstallation.TryDiscoverInstallation(editorPath, out installation))
-					return true;
-#endif
-				if (VisualStudioCodeInstallation.TryDiscoverInstallation(editorPath, out installation))
+		public static bool TryDiscoverInstallation(string editorPath, out IEditorInstallation installation) {
+			try {
+				if (ZedInstallation.TryDiscoverInstallation(editorPath, out installation))
 					return true;
 			}
-			catch (IOException)
-			{
+			catch (IOException) {
 				installation = null;
 			}
 
 			return false;
 		}
 
-		public static void Initialize()
-		{
-#if UNITY_EDITOR_WIN
-			VisualStudioForWindowsInstallation.Initialize();
-#endif
-			VisualStudioCodeInstallation.Initialize();
+		public static void Initialize() {
+			ZedInstallation.Initialize();
 		}
 	}
 }

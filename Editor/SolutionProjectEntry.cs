@@ -4,18 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 using System;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal class SolutionProjectEntry
-	{
+namespace Zed.Unity.Editor {
+	internal class SolutionProjectEntry {
 		public string ProjectFactoryGuid { get; set; }
 		public string Name { get; set; }
 		public string FileName { get; set; }
 		public string ProjectGuid { get; set; }
 		public string Metadata { get; set; }
 
-		public bool IsSolutionFolderProjectFactory()
-		{
+		public bool IsSolutionFolderProjectFactory() {
 			return ProjectFactoryGuid != null && ProjectFactoryGuid.Equals("2150E333-8FDC-42A3-9474-1A3956D46DE8", StringComparison.OrdinalIgnoreCase);
 		}
 	}

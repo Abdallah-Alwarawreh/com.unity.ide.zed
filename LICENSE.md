@@ -1,5 +1,8 @@
-Visual Studio Editor copyright © 2019 Unity Technologies
-Visual Studio Editor copyright © 2019 Microsoft Corporation. All rights reserved.
+Zed Editor for Unity - Forked from Visual Studio Editor for Unity
+
+Original Visual Studio Editor copyright © 2019 Unity Technologies
+Original Visual Studio Editor copyright © 2019 Microsoft Corporation. All rights reserved.
+Zed Editor modifications - Community contribution
 
 MIT License
 

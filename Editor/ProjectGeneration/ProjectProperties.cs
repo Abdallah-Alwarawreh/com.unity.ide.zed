@@ -1,9 +1,7 @@
 ﻿using System;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal class ProjectProperties
-	{
+namespace Zed.Unity.Editor {
+	internal class ProjectProperties {
 		public string ProjectGuid { get; set; } = string.Empty;
 		public string LangVersion { get; set; } = "latest";
 		public string AssemblyName { get; set; } = string.Empty;

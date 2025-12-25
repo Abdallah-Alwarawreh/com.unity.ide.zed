@@ -7,27 +7,21 @@
 using System.Text;
 using UnityEditor.Compilation;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
+namespace Zed.Unity.Editor {
 
-	internal class LegacyStyleProjectGeneration : ProjectGeneration
-	{
+	internal class LegacyStyleProjectGeneration : ProjectGeneration {
 		internal override GeneratorStyle Style => GeneratorStyle.Legacy;
 
-		public LegacyStyleProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider, IFileIO fileIoProvider, IGUIDGenerator guidGenerator) : base(tempDirectory, assemblyNameProvider, fileIoProvider, guidGenerator)
-		{
+		public LegacyStyleProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider, IFileIO fileIoProvider, IGUIDGenerator guidGenerator) : base(tempDirectory, assemblyNameProvider, fileIoProvider, guidGenerator) {
 		}
 
-		public LegacyStyleProjectGeneration(string tempDirectory) : base(tempDirectory)
-		{
+		public LegacyStyleProjectGeneration(string tempDirectory) : base(tempDirectory) {
 		}
 
-		public LegacyStyleProjectGeneration()
-		{
+		public LegacyStyleProjectGeneration() {
 		}
 
-		internal override void GetProjectHeader(ProjectProperties properties, out StringBuilder headerBuilder)
-		{
+		internal override void GetProjectHeader(ProjectProperties properties, out StringBuilder headerBuilder) {
 			headerBuilder = new StringBuilder();
 
 			//Header
@@ -71,8 +65,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			GetProjectHeaderAnalyzers(properties, headerBuilder);
 		}
 
-		internal static void GetProjectHeaderConfigurations(ProjectProperties properties, StringBuilder headerBuilder)
-		{
+		internal static void GetProjectHeaderConfigurations(ProjectProperties properties, StringBuilder headerBuilder) {
 			headerBuilder.Append(@"  <PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "">").Append(k_WindowsNewline);
 			headerBuilder.Append(@"    <DebugSymbols>true</DebugSymbols>").Append(k_WindowsNewline);
 			headerBuilder.Append(@"    <DebugType>full</DebugType>").Append(k_WindowsNewline);
@@ -90,8 +83,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			headerBuilder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
 		}
 
-		internal override void AppendProjectReference(Assembly assembly, Assembly reference, StringBuilder projectBuilder)
-		{
+		internal override void AppendProjectReference(Assembly assembly, Assembly reference, StringBuilder projectBuilder) {
 			// If the current assembly is a Player project, we want to project-reference the corresponding Player project
 			var referenceName = m_AssemblyNameProvider.GetAssemblyName(assembly.outputPath, reference.name);
 
@@ -101,8 +93,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			projectBuilder.Append("    </ProjectReference>").Append(k_WindowsNewline);
 		}
 
-		internal override void GetProjectFooter(StringBuilder footerBuilder)
-		{
+		internal override void GetProjectFooter(StringBuilder footerBuilder) {
 			footerBuilder.Append(string.Join(k_WindowsNewline,
 				$"  <Import Project=\"{@"$(MSBuildToolsPath)\Microsoft.CSharp.targets".NormalizePathSeparators()}\" />",
 				@"  <Target Name=""GenerateTargetFrameworkMonikerAttribute"" />",

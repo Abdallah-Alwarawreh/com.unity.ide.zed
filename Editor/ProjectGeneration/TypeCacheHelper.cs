@@ -10,12 +10,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 
-namespace Microsoft.Unity.VisualStudio.Editor {
+namespace Zed.Unity.Editor {
 
-	internal class TypeCacheHelper
-	{
-		internal static IEnumerable<SR.MethodInfo> GetPostProcessorCallbacks(string name)
-		{
+	internal class TypeCacheHelper {
+		internal static IEnumerable<SR.MethodInfo> GetPostProcessorCallbacks(string name) {
 			return TypeCache
 				.GetTypesDerivedFrom<AssetPostprocessor>()
 				.Where(t => t.Assembly.GetName().Name != KnownAssemblies.Bridge) // never call into the bridge if loaded with the package

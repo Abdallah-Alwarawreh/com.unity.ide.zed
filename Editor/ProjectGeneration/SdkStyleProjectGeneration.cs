@@ -10,14 +10,11 @@ using System.Text;
 using UnityEditor.Compilation;
 using UnityEngine;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal class SdkStyleProjectGeneration : ProjectGeneration
-	{
+namespace Zed.Unity.Editor {
+	internal class SdkStyleProjectGeneration : ProjectGeneration {
 		internal override GeneratorStyle Style => GeneratorStyle.SDK;
 
-		internal class SdkStyleAssemblyNameProvider : AssemblyNameProvider
-		{
+		internal class SdkStyleAssemblyNameProvider : AssemblyNameProvider {
 			// disable PlayerGeneration with SdkStyle projects
 			internal override ProjectGenerationFlag ProjectGenerationFlagImpl => base.ProjectGenerationFlagImpl & ~ProjectGenerationFlag.PlayerAssemblies;
 		}
@@ -26,8 +23,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			Directory.GetParent(Application.dataPath)?.FullName,
 			new SdkStyleAssemblyNameProvider(),
 			new FileIOProvider(),
-			new GUIDProvider())
-		{
+			new GUIDProvider()) {
 		}
 
 		internal static readonly string[] SupportedCapabilities = new string[]
@@ -48,8 +44,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			"ReferenceManagerAssemblies",
 		};
 
-		internal override void GetProjectHeader(ProjectProperties properties, out StringBuilder headerBuilder)
-		{
+		internal override void GetProjectHeader(ProjectProperties properties, out StringBuilder headerBuilder) {
 			headerBuilder = new StringBuilder();
 
 			headerBuilder.Append(@"<Project>").Append(k_WindowsNewline);
@@ -68,7 +63,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 			// Supported capabilities
 			GetCapabilityBlock(headerBuilder, "Sdk.props", "Include", SupportedCapabilities);
-		
+
 			headerBuilder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
 			headerBuilder.Append(@"    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>").Append(k_WindowsNewline);
 			headerBuilder.Append(@"    <EnableDefaultItems>false</EnableDefaultItems>").Append(k_WindowsNewline);
@@ -98,46 +93,39 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			GetProjectHeaderAnalyzers(properties, headerBuilder);
 		}
 
-		internal override void AppendProjectReference(Assembly assembly, Assembly reference, StringBuilder projectBuilder)
-		{
+		internal override void AppendProjectReference(Assembly assembly, Assembly reference, StringBuilder projectBuilder) {
 			// If the current assembly is a Player project, we want to project-reference the corresponding Player project
 			var referenceName = m_AssemblyNameProvider.GetAssemblyName(assembly.outputPath, reference.name);
 			projectBuilder.Append(@"    <ProjectReference Include=""").Append(referenceName).Append(GetProjectExtension()).Append(@""" />").Append(k_WindowsNewline);
 		}
 
-		internal override void GetProjectFooter(StringBuilder footerBuilder)
-		{
+		internal override void GetProjectFooter(StringBuilder footerBuilder) {
 			// Unsupported capabilities
 			GetCapabilityBlock(footerBuilder, "Sdk.targets", "Remove", UnsupportedCapabilities);
 
 			footerBuilder.Append("</Project>").Append(k_WindowsNewline);
 		}
 
-		internal static void GetCapabilityBlock(StringBuilder footerBuilder, string import, string attribute, string[] capabilities)
-		{
+		internal static void GetCapabilityBlock(StringBuilder footerBuilder, string import, string attribute, string[] capabilities) {
 			footerBuilder.Append($@"  <Import Project=""{import}"" Sdk=""Microsoft.NET.Sdk"" />").Append(k_WindowsNewline);
 			footerBuilder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
-			foreach (var capability in capabilities)
-			{
+			foreach (var capability in capabilities) {
 				footerBuilder.Append($@"    <ProjectCapability {attribute}=""{capability}"" />").Append(k_WindowsNewline);
 			}
 			footerBuilder.Append(@"  </ItemGroup>").Append(k_WindowsNewline);
 		}
 
-		internal override string SolutionFileImpl()
-		{
+		internal override string SolutionFileImpl() {
 			return base.SolutionFileImpl() + "x";
 		}
 
-		internal override string SolutionText(IEnumerable<Assembly> assemblies, Solution previousSolution = null)
-		{
+		internal override string SolutionText(IEnumerable<Assembly> assemblies, Solution previousSolution = null) {
 			var projects = GetSolutionProjects(assemblies, previousSolution);
 
 			var content = new StringBuilder();
 			content.Append("<Solution>").Append(k_WindowsNewline);
 
-			foreach (var project in projects)
-			{
+			foreach (var project in projects) {
 				content.Append("  ").Append("<Project Path=\"").Append(project.FileName).Append("\" />").Append(k_WindowsNewline);
 			}
 

@@ -7,10 +7,8 @@ using System.IO;
 using Unity.CodeEditor;
 using IOPath = System.IO.Path;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal interface IVisualStudioInstallation
-	{
+namespace Zed.Unity.Editor {
+	internal interface IEditorInstallation {
 		string Path { get; }
 		bool SupportsAnalyzers { get; }
 		Version LatestLanguageVersionSupported { get; }
@@ -21,8 +19,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		void CreateExtraFiles(string projectDirectory);
 	}
 
-	internal abstract class VisualStudioInstallation : IVisualStudioInstallation
-	{
+	internal abstract class EditorInstallation : IEditorInstallation {
 		public string Name { get; set; }
 		public string Path { get; set; }
 		public Version Version { get; set; }
@@ -35,12 +32,9 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		public abstract void CreateExtraFiles(string projectDirectory);
 		public abstract bool Open(string path, int line, int column, string solutionPath);
 
-		protected Version GetLatestLanguageVersionSupported(VersionPair[] versions)
-		{
-			if (versions != null)
-			{
-				foreach (var entry in versions)
-				{
+		protected Version GetLatestLanguageVersionSupported(VersionPair[] versions) {
+			if (versions != null) {
+				foreach (var entry in versions) {
 					if (Version >= entry.IdeVersion)
 						return entry.LanguageVersion;
 				}
@@ -50,8 +44,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return new Version(7, 0);
 		}
 
-		protected static string[] GetAnalyzers(string path)
-		{
+		protected static string[] GetAnalyzers(string path) {
 			var analyzersDirectory = FileUtility.GetAbsolutePath(IOPath.Combine(path, "Analyzers"));
 
 			if (Directory.Exists(analyzersDirectory))
@@ -60,8 +53,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return Array.Empty<string>();
 		}
 
-		public CodeEditor.Installation ToCodeEditorInstallation()
-		{
+		public CodeEditor.Installation ToCodeEditorInstallation() {
 			return new CodeEditor.Installation() { Name = Name, Path = Path };
 		}
 	}

@@ -6,10 +6,8 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Microsoft.Unity.VisualStudio.Editor.Messaging
-{
-	internal class Messager : IDisposable
-	{
+namespace Zed.Unity.Editor.Messaging {
+	internal class Messager : IDisposable {
 		public event EventHandler<MessageEventArgs> ReceiveMessage;
 		public event EventHandler<ExceptionEventArgs> MessagerException;
 
@@ -21,16 +19,14 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 		private static extern bool SetHandleInformation(IntPtr hObject, HandleFlags dwMask, HandleFlags dwFlags);
 
 		[Flags]
-		private enum HandleFlags: uint
-		{
+		private enum HandleFlags : uint {
 			None = 0,
 			Inherit = 1,
 			ProtectFromClose = 2
 		}
 #endif
 
-		protected Messager(int port)
-		{
+		protected Messager(int port) {
 			_socket = new UdpSocket();
 			_socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
 			_socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -46,14 +42,12 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 			BeginReceiveMessage();
 		}
 
-		private void BeginReceiveMessage()
-		{
+		private void BeginReceiveMessage() {
 			var buffer = new byte[UdpSocket.BufferSize];
 			var any = UdpSocket.Any();
 
-			try
-			{
-				beginReceive:
+			try {
+			beginReceive:
 				if (_disposed)
 					return;
 
@@ -61,21 +55,17 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 				if (result.CompletedSynchronously)
 					goto beginReceive;
 			}
-			catch (SocketException se)
-			{
+			catch (SocketException se) {
 				MessagerException?.Invoke(this, new ExceptionEventArgs(se));
 
 				BeginReceiveMessage();
 			}
-			catch (ObjectDisposedException)
-			{
+			catch (ObjectDisposedException) {
 			}
 		}
 
-		private void ReceiveMessageCallback(IAsyncResult result)
-		{
-			try
-			{
+		private void ReceiveMessageCallback(IAsyncResult result) {
+			try {
 				var endPoint = UdpSocket.Any();
 
 				if (_disposed)
@@ -84,32 +74,26 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 				_socket.EndReceiveFrom(result, ref endPoint);
 
 				var message = DeserializeMessage(UdpSocket.BufferFor(result));
-				if (message != null)
-				{
+				if (message != null) {
 					message.Origin = (IPEndPoint)endPoint;
 
-					if (IsValidTcpMessage(message, out var port, out var bufferSize))
-					{
+					if (IsValidTcpMessage(message, out var port, out var bufferSize)) {
 						// switch to TCP mode to handle big messages
-						TcpClient.Queue(message.Origin.Address, port, bufferSize, buffer =>
-						{
+						TcpClient.Queue(message.Origin.Address, port, bufferSize, buffer => {
 							var originalMessage = DeserializeMessage(buffer);
 							originalMessage.Origin = message.Origin;
 							ReceiveMessage?.Invoke(this, new MessageEventArgs(originalMessage));
 						});
 					}
-					else
-					{
+					else {
 						ReceiveMessage?.Invoke(this, new MessageEventArgs(message));
 					}
 				}
 			}
-			catch (ObjectDisposedException)
-			{
+			catch (ObjectDisposedException) {
 				return;
 			}
-			catch (Exception e)
-			{
+			catch (Exception e) {
 				RaiseMessagerException(e);
 			}
 
@@ -117,8 +101,7 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 				BeginReceiveMessage();
 		}
 
-		private static bool IsValidTcpMessage(Message message, out int port, out int bufferSize)
-		{
+		private static bool IsValidTcpMessage(Message message, out int port, out int bufferSize) {
 			port = 0;
 			bufferSize = 0;
 			if (message.Value == null)
@@ -133,32 +116,26 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 			return int.TryParse(parts[1], out bufferSize);
 		}
 
-		private void RaiseMessagerException(Exception e)
-		{
+		private void RaiseMessagerException(Exception e) {
 			MessagerException?.Invoke(this, new ExceptionEventArgs(e));
 		}
 
-		private static Message MessageFor(MessageType type, string value)
-		{
+		private static Message MessageFor(MessageType type, string value) {
 			return new Message { Type = type, Value = value };
 		}
 
-		public void SendMessage(IPEndPoint target, MessageType type, string value = "")
-		{
+		public void SendMessage(IPEndPoint target, MessageType type, string value = "") {
 			var message = MessageFor(type, value);
 			var buffer = SerializeMessage(message);
 
-			try
-			{
+			try {
 				if (_disposed)
 					return;
 
-				if (buffer.Length >= UdpSocket.BufferSize)
-				{
+				if (buffer.Length >= UdpSocket.BufferSize) {
 					// switch to TCP mode to handle big messages
 					var port = TcpListener.Queue(buffer);
-					if (port > 0)
-					{
+					if (port > 0) {
 						// success, replace original message with "switch to tcp" marker + port information + buffer length
 						message = MessageFor(MessageType.Tcp, string.Concat(port, ':', buffer.Length));
 						buffer = SerializeMessage(message);
@@ -167,35 +144,28 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 
 				_socket.BeginSendTo(buffer, 0, Math.Min(buffer.Length, UdpSocket.BufferSize), SocketFlags.None, target, SendMessageCallback, null);
 			}
-			catch (SocketException se)
-			{
+			catch (SocketException se) {
 				MessagerException?.Invoke(this, new ExceptionEventArgs(se));
 			}
-			catch (ObjectDisposedException)
-			{
+			catch (ObjectDisposedException) {
 			}
 		}
 
-		private void SendMessageCallback(IAsyncResult result)
-		{
-			try
-			{
+		private void SendMessageCallback(IAsyncResult result) {
+			try {
 				if (_disposed)
 					return;
 
 				_socket.EndSendTo(result);
 			}
-			catch (SocketException se)
-			{
+			catch (SocketException se) {
 				MessagerException?.Invoke(this, new ExceptionEventArgs(se));
 			}
-			catch (ObjectDisposedException)
-			{
+			catch (ObjectDisposedException) {
 			}
 		}
 
-		private static byte[] SerializeMessage(Message message)
-		{
+		private static byte[] SerializeMessage(Message message) {
 			var serializer = new Serializer();
 			serializer.WriteInt32((int)message.Type);
 			serializer.WriteString(message.Value);
@@ -203,8 +173,7 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 			return serializer.Buffer();
 		}
 
-		private static Message DeserializeMessage(byte[] buffer)
-		{
+		private static Message DeserializeMessage(byte[] buffer) {
 			if (buffer.Length < 4)
 				return null;
 
@@ -215,20 +184,16 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 			return new Message { Type = type, Value = value };
 		}
 
-		public static Messager BindTo(int port)
-		{
+		public static Messager BindTo(int port) {
 			return new Messager(port);
 		}
 
-		public void Dispose()
-		{
-			try
-			{
+		public void Dispose() {
+			try {
 				_disposed = true;
 				_socket.Close();
 			}
-			catch
-			{
+			catch {
 			}
 		}
 	}

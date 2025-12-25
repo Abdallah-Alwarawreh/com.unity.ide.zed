@@ -6,10 +6,8 @@
 using System;
 using System.Threading;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal class AsyncOperation<T>
-	{
+namespace Zed.Unity.Editor {
+	internal class AsyncOperation<T> {
 		private readonly Func<T> _producer;
 		private readonly Func<Exception, T> _exceptionHandler;
 		private readonly Action _finalHandler;
@@ -18,66 +16,53 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		private T _result;
 		private Exception _exception;
 
-		private AsyncOperation(Func<T> producer, Func<Exception, T> exceptionHandler, Action finalHandler)
-		{
+		private AsyncOperation(Func<T> producer, Func<Exception, T> exceptionHandler, Action finalHandler) {
 			_producer = producer;
 			_exceptionHandler = exceptionHandler;
 			_finalHandler = finalHandler;
 			_resetEvent = new ManualResetEventSlim(initialState: false);
 		}
 
-		public static AsyncOperation<T> Run(Func<T> producer, Func<Exception, T> exceptionHandler = null, Action finalHandler = null)
-		{
+		public static AsyncOperation<T> Run(Func<T> producer, Func<Exception, T> exceptionHandler = null, Action finalHandler = null) {
 			var task = new AsyncOperation<T>(producer, exceptionHandler, finalHandler);
 			task.Run();
 			return task;
 		}
 
-		private void Run()
-		{
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				try
-				{
+		private void Run() {
+			ThreadPool.QueueUserWorkItem(_ => {
+				try {
 					_result = _producer();
 				}
-				catch (Exception e)
-				{
+				catch (Exception e) {
 					_exception = e;
 
-					if (_exceptionHandler != null)
-					{
+					if (_exceptionHandler != null) {
 						_result = _exceptionHandler(e);
 					}
 				}
-				finally
-				{
+				finally {
 					_finalHandler?.Invoke();
 					_resetEvent.Set();
 				}
 			});
 		}
 
-		private void CheckCompletion()
-		{
+		private void CheckCompletion() {
 			if (!_resetEvent.IsSet)
 				_resetEvent.Wait();
 		}
 
 
-		public T Result
-		{
-			get
-			{
+		public T Result {
+			get {
 				CheckCompletion();
 				return _result;
 			}
 		}
 
-		public Exception Exception
-		{
-			get
-			{
+		public Exception Exception {
+			get {
 				CheckCompletion();
 				return _exception;
 			}

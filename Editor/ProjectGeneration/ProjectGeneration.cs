@@ -17,16 +17,13 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	public enum ScriptingLanguage
-	{
+namespace Zed.Unity.Editor {
+	public enum ScriptingLanguage {
 		None,
 		CSharp
 	}
 
-	public interface IGenerator
-	{
+	public interface IGenerator {
 		bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles);
 		void Sync();
 		bool HasSolutionBeenGenerated();
@@ -36,8 +33,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		IAssemblyNameProvider AssemblyNameProvider { get; }
 	}
 
-	public class ProjectGeneration : IGenerator
-	{
+	public class ProjectGeneration : IGenerator {
 		// do not remove because of the Validation API, used in LegacyStyleProjectGeneration
 		public static readonly string MSBuildNamespaceUri = "http://schemas.microsoft.com/developer/msbuild/2003";
 
@@ -55,18 +51,15 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		internal readonly IAssemblyNameProvider m_AssemblyNameProvider;
 		readonly IFileIO m_FileIOProvider;
 		readonly IGUIDGenerator m_GUIDGenerator;
-		IVisualStudioInstallation m_CurrentInstallation;
+		IEditorInstallation m_CurrentInstallation;
 
-		public ProjectGeneration() : this(Directory.GetParent(Application.dataPath).FullName)
-		{
+		public ProjectGeneration() : this(Directory.GetParent(Application.dataPath).FullName) {
 		}
 
-		public ProjectGeneration(string tempDirectory) : this(tempDirectory, new AssemblyNameProvider(), new FileIOProvider(), new GUIDProvider())
-		{
+		public ProjectGeneration(string tempDirectory) : this(tempDirectory, new AssemblyNameProvider(), new FileIOProvider(), new GUIDProvider()) {
 		}
 
-		public ProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider, IFileIO fileIoProvider, IGUIDGenerator guidGenerator)
-		{
+		public ProjectGeneration(string tempDirectory, IAssemblyNameProvider assemblyNameProvider, IFileIO fileIoProvider, IGUIDGenerator guidGenerator) {
 			ProjectDirectory = FileUtility.NormalizeWindowsToUnix(tempDirectory);
 			m_ProjectName = Path.GetFileName(ProjectDirectory);
 			m_AssemblyNameProvider = assemblyNameProvider;
@@ -90,10 +83,8 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		/// <param name="reimportedFiles">
 		/// A set of files that got reimported
 		/// </param>
-		public bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
-		{
-			using (solutionSyncMarker.Auto())
-			{
+		public bool SyncIfNeeded(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles) {
+			using (solutionSyncMarker.Auto()) {
 				// We need the exact VS version/capabilities to tweak project generation (analyzers/langversion)
 				RefreshCurrentInstallation();
 
@@ -104,8 +95,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				// Don't sync if we haven't synced before
 				var affected = affectedFiles as ICollection<string> ?? affectedFiles.ToArray();
 				var reimported = reimportedFiles as ICollection<string> ?? reimportedFiles.ToArray();
-				if (!HasFilesBeenModified(affected, reimported))
-				{
+				if (!HasFilesBeenModified(affected, reimported)) {
 					return false;
 				}
 
@@ -125,8 +115,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 						name.Split(new[] { ".dll" }, StringSplitOptions.RemoveEmptyEntries)[0]);
 				var affectedAndReimported = new HashSet<string>(affectedNames.Concat(reimportedNames));
 
-				foreach (var assembly in allProjectAssemblies)
-				{
+				foreach (var assembly in allProjectAssemblies) {
 					if (!affectedAndReimported.Contains(assembly.name))
 						continue;
 
@@ -139,33 +128,28 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private void CreateExtraFiles(IVisualStudioInstallation installation)
-		{
+		private void CreateExtraFiles(IEditorInstallation installation) {
 			installation?.CreateExtraFiles(ProjectDirectory);
 		}
 
-		private bool HasFilesBeenModified(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles)
-		{
+		private bool HasFilesBeenModified(IEnumerable<string> affectedFiles, IEnumerable<string> reimportedFiles) {
 			return affectedFiles.Any(ShouldFileBePartOfSolution) || reimportedFiles.Any(ShouldSyncOnReimportedAsset);
 		}
 
-		private static bool ShouldSyncOnReimportedAsset(string asset)
-		{
+		private static bool ShouldSyncOnReimportedAsset(string asset) {
 			// ".dll", ".asmdef"
 			var extension = Path.GetExtension(asset);
 			return extension == ".dll" || extension == ".asmdef";
 		}
 
-		private void RefreshCurrentInstallation()
-		{
-			var editor = CodeEditor.CurrentEditor as VisualStudioEditor;
-			editor?.TryGetVisualStudioInstallationForPath(CodeEditor.CurrentEditorInstallation, lookupDiscoveredInstallations: true, out m_CurrentInstallation);
+		private void RefreshCurrentInstallation() {
+			var editor = CodeEditor.CurrentEditor as ZedEditor;
+			editor?.TryGetZedInstallationForPath(CodeEditor.CurrentEditorInstallation, lookupDiscoveredInstallations: true, out m_CurrentInstallation);
 		}
 
 		static ProfilerMarker solutionSyncMarker = new ProfilerMarker("SolutionSynchronizerSync");
 
-		public void Sync()
-		{
+		public void Sync() {
 			// We need the exact VS version/capabilities to tweak project generation (analyzers/langversion)
 			RefreshCurrentInstallation();
 
@@ -179,21 +163,18 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 			var externalCodeAlreadyGeneratedProjects = OnPreGeneratingCSProjectFiles();
 
-			if (!externalCodeAlreadyGeneratedProjects)
-			{
+			if (!externalCodeAlreadyGeneratedProjects) {
 				GenerateAndWriteSolutionAndProjects();
 			}
 
 			OnGeneratedCSProjectFiles();
 		}
 
-		public bool HasSolutionBeenGenerated()
-		{
+		public bool HasSolutionBeenGenerated() {
 			return m_FileIOProvider.Exists(SolutionFile());
 		}
 
-		private void SetupProjectSupportedExtensions()
-		{
+		private void SetupProjectSupportedExtensions() {
 			_supportedExtensions = new HashSet<string>
 			{
 				"dll",
@@ -201,30 +182,25 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				"additionalfile"
 			};
 
-			foreach (var extension in m_AssemblyNameProvider.ProjectSupportedExtensions)
-			{
+			foreach (var extension in m_AssemblyNameProvider.ProjectSupportedExtensions) {
 				_supportedExtensions.Add(extension);
 			}
 
-			foreach (var extension in EditorSettings.projectGenerationBuiltinExtensions)
-			{
+			foreach (var extension in EditorSettings.projectGenerationBuiltinExtensions) {
 				_supportedExtensions.Add(extension);
 			}
 		}
 
-		private bool ShouldFileBePartOfSolution(string file)
-		{
+		private bool ShouldFileBePartOfSolution(string file) {
 			// Exclude files coming from packages except if they are internalized.
-			if (m_AssemblyNameProvider.IsInternalizedPackagePath(file))
-			{
+			if (m_AssemblyNameProvider.IsInternalizedPackagePath(file)) {
 				return false;
 			}
 
 			return IsSupportedFile(file);
 		}
 
-		private static string GetExtensionWithoutDot(string path)
-		{
+		private static string GetExtensionWithoutDot(string path) {
 			// Prevent re-processing and information loss
 			if (!Path.HasExtension(path))
 				return path;
@@ -235,20 +211,17 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				.ToLower();
 		}
 
-		public bool IsSupportedFile(string path)
-		{
+		public bool IsSupportedFile(string path) {
 			return IsSupportedFile(path, out _);
 		}
 
-		private bool IsSupportedFile(string path, out string extensionWithoutDot)
-		{
+		private bool IsSupportedFile(string path, out string extensionWithoutDot) {
 			extensionWithoutDot = GetExtensionWithoutDot(path);
 			// dlls and other configured files are not scripts but still need to be included
 			return _supportedExtensions.Contains(extensionWithoutDot);
 		}
 
-		private static ScriptingLanguage ScriptingLanguageFor(Assembly assembly)
-		{
+		private static ScriptingLanguage ScriptingLanguageFor(Assembly assembly) {
 			var files = assembly.sourceFiles;
 
 			if (files.Length == 0)
@@ -257,18 +230,15 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return ScriptingLanguageForFile(files[0]);
 		}
 
-		internal static ScriptingLanguage ScriptingLanguageForExtension(string extensionWithoutDot)
-		{
+		internal static ScriptingLanguage ScriptingLanguageForExtension(string extensionWithoutDot) {
 			return extensionWithoutDot == "cs" ? ScriptingLanguage.CSharp : ScriptingLanguage.None;
 		}
 
-		internal static ScriptingLanguage ScriptingLanguageForFile(string path)
-		{
+		internal static ScriptingLanguage ScriptingLanguageForFile(string path) {
 			return ScriptingLanguageForExtension(GetExtensionWithoutDot(path));
 		}
 
-		public void GenerateAndWriteSolutionAndProjects()
-		{
+		public void GenerateAndWriteSolutionAndProjects() {
 			// Only synchronize assemblies that have associated source files and ones that we actually want in the project.
 			// This also filters out DLLs coming from .asmdef files in packages.
 			var assemblies = m_AssemblyNameProvider.GetAssemblies(ShouldFileBePartOfSolution).ToList();
@@ -279,16 +249,14 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 			var allProjectAssemblies = RelevantAssembliesForMode(assemblies);
 
-			foreach (var assembly in allProjectAssemblies)
-			{
+			foreach (var assembly in allProjectAssemblies) {
 				SyncProject(assembly,
 					allAssetProjectParts,
 					ParseResponseFileData(assembly));
 			}
 		}
 
-		private ResponseFileData[] ParseResponseFileData(Assembly assembly)
-		{
+		private ResponseFileData[] ParseResponseFileData(Assembly assembly) {
 			var systemReferenceDirectories = CompilationPipeline.GetSystemAssemblyDirectories(assembly.compilerOptions.ApiCompatibilityLevel);
 
 			Dictionary<string, ResponseFileData> responseFilesData = assembly.compilerOptions.ResponseFiles.ToDictionary(x => x, x => m_AssemblyNameProvider.ParseResponseFile(
@@ -300,11 +268,9 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			Dictionary<string, ResponseFileData> responseFilesWithErrors = responseFilesData.Where(x => x.Value.Errors.Any())
 				.ToDictionary(x => x.Key, x => x.Value);
 
-			if (responseFilesWithErrors.Any())
-			{
+			if (responseFilesWithErrors.Any()) {
 				foreach (var error in responseFilesWithErrors)
-					foreach (var valueError in error.Value.Errors)
-					{
+					foreach (var valueError in error.Value.Errors) {
 						Debug.LogError($"{error.Key} Parse Error : {valueError}");
 					}
 			}
@@ -312,32 +278,26 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return responseFilesData.Select(x => x.Value).ToArray();
 		}
 
-		private Dictionary<string, string> GenerateAllAssetProjectParts()
-		{
+		private Dictionary<string, string> GenerateAllAssetProjectParts() {
 			Dictionary<string, StringBuilder> stringBuilders = new Dictionary<string, StringBuilder>();
 
-			foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths())
-			{
+			foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths()) {
 				// Exclude files coming from packages except if they are internalized.
-				if (m_AssemblyNameProvider.IsInternalizedPackagePath(asset))
-				{
+				if (m_AssemblyNameProvider.IsInternalizedPackagePath(asset)) {
 					continue;
 				}
 
-				if (IsSupportedFile(asset, out var extensionWithoutDot) && ScriptingLanguage.None == ScriptingLanguageForExtension(extensionWithoutDot))
-				{
+				if (IsSupportedFile(asset, out var extensionWithoutDot) && ScriptingLanguage.None == ScriptingLanguageForExtension(extensionWithoutDot)) {
 					// Find assembly the asset belongs to by adding script extension and using compilation pipeline.
 					var assemblyName = m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset);
 
-					if (string.IsNullOrEmpty(assemblyName))
-					{
+					if (string.IsNullOrEmpty(assemblyName)) {
 						continue;
 					}
 
 					assemblyName = Path.GetFileNameWithoutExtension(assemblyName);
 
-					if (!stringBuilders.TryGetValue(assemblyName, out var projectBuilder))
-					{
+					if (!stringBuilders.TryGetValue(assemblyName, out var projectBuilder)) {
 						projectBuilder = new StringBuilder();
 						stringBuilders[assemblyName] = projectBuilder;
 					}
@@ -354,19 +314,16 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return result;
 		}
 
-		internal enum IncludeAssetTag
-		{
+		internal enum IncludeAssetTag {
 			Compile,
 			None
 		}
 
-		internal virtual void IncludeAsset(StringBuilder builder, IncludeAssetTag tag, string asset)
-		{
+		internal virtual void IncludeAsset(StringBuilder builder, IncludeAssetTag tag, string asset) {
 			var filename = EscapedRelativePathFor(asset, out var packageInfo);
 
 			builder.Append("    <").Append(tag).Append(@" Include=""").Append(filename);
-			if (Path.IsPathRooted(filename) && packageInfo != null)
-			{
+			if (Path.IsPathRooted(filename) && packageInfo != null) {
 				// We are outside the Unity project and using a package context
 				var linkPath = SkipPathPrefix(asset.NormalizePathSeparators(), packageInfo.assetPath.NormalizePathSeparators());
 
@@ -374,8 +331,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				builder.Append("      <Link>").Append(linkPath).Append("</Link>").Append(k_WindowsNewline);
 				builder.Append($"    </{tag}>").Append(k_WindowsNewline);
 			}
-			else
-			{
+			else {
 				builder.Append(@""" />").Append(k_WindowsNewline);
 			}
 		}
@@ -383,47 +339,38 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		private void SyncProject(
 			Assembly assembly,
 			Dictionary<string, string> allAssetsProjectParts,
-			ResponseFileData[] responseFileData)
-		{
+			ResponseFileData[] responseFileData) {
 			SyncProjectFileIfNotChanged(
 				ProjectFile(assembly),
 				ProjectText(assembly, allAssetsProjectParts, responseFileData));
 		}
 
-		private void SyncProjectFileIfNotChanged(string path, string newContents)
-		{
-			if (Path.GetExtension(path) == ".csproj")
-			{
+		private void SyncProjectFileIfNotChanged(string path, string newContents) {
+			if (Path.GetExtension(path) == ".csproj") {
 				newContents = OnGeneratedCSProject(path, newContents);
 			}
 
 			SyncFileIfNotChanged(path, newContents);
 		}
 
-		private void SyncSolutionFileIfNotChanged(string path, string newContents)
-		{
+		private void SyncSolutionFileIfNotChanged(string path, string newContents) {
 			newContents = OnGeneratedSlnSolution(path, newContents);
 
 			SyncFileIfNotChanged(path, newContents);
 		}
 
-		static void OnGeneratedCSProjectFiles()
-		{
-			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(nameof(OnGeneratedCSProjectFiles)))
-			{
+		static void OnGeneratedCSProjectFiles() {
+			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(nameof(OnGeneratedCSProjectFiles))) {
 				method.Invoke(null, Array.Empty<object>());
 			}
 		}
 
-		private static bool OnPreGeneratingCSProjectFiles()
-		{
+		private static bool OnPreGeneratingCSProjectFiles() {
 			bool result = false;
 
-			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(nameof(OnPreGeneratingCSProjectFiles)))
-			{
+			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(nameof(OnPreGeneratingCSProjectFiles))) {
 				var retValue = method.Invoke(null, Array.Empty<object>());
-				if (method.ReturnType == typeof(bool))
-				{
+				if (method.ReturnType == typeof(bool)) {
 					result |= (bool)retValue;
 				}
 			}
@@ -431,14 +378,11 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return result;
 		}
 
-		private static string InvokeAssetPostProcessorGenerationCallbacks(string name, string path, string content)
-		{
-			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(name))
-			{
+		private static string InvokeAssetPostProcessorGenerationCallbacks(string name, string path, string content) {
+			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(name)) {
 				var args = new[] { path, content };
 				var returnValue = method.Invoke(null, args);
-				if (method.ReturnType == typeof(string))
-				{
+				if (method.ReturnType == typeof(string)) {
 					// We want to chain content update between invocations
 					content = (string)returnValue;
 				}
@@ -447,27 +391,21 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return content;
 		}
 
-		private static string OnGeneratedCSProject(string path, string content)
-		{
+		private static string OnGeneratedCSProject(string path, string content) {
 			return InvokeAssetPostProcessorGenerationCallbacks(nameof(OnGeneratedCSProject), path, content);
 		}
 
-		private static string OnGeneratedSlnSolution(string path, string content)
-		{
+		private static string OnGeneratedSlnSolution(string path, string content) {
 			return InvokeAssetPostProcessorGenerationCallbacks(nameof(OnGeneratedSlnSolution), path, content);
 		}
 
-		private void SyncFileIfNotChanged(string filename, string newContents)
-		{
-			try
-			{
-				if (m_FileIOProvider.Exists(filename) && newContents == m_FileIOProvider.ReadAllText(filename))
-				{
+		private void SyncFileIfNotChanged(string filename, string newContents) {
+			try {
+				if (m_FileIOProvider.Exists(filename) && newContents == m_FileIOProvider.ReadAllText(filename)) {
 					return;
 				}
 			}
-			catch (Exception exception)
-			{
+			catch (Exception exception) {
 				Debug.LogException(exception);
 			}
 
@@ -476,24 +414,20 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 		private string ProjectText(Assembly assembly,
 			Dictionary<string, string> allAssetsProjectParts,
-			ResponseFileData[] responseFileData)
-		{
+			ResponseFileData[] responseFileData) {
 			ProjectHeader(assembly, responseFileData, out StringBuilder projectBuilder);
 
 			var references = new List<string>();
 
 			projectBuilder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
-			foreach (string file in assembly.sourceFiles)
-			{
+			foreach (string file in assembly.sourceFiles) {
 				if (!IsSupportedFile(file, out var extensionWithoutDot))
 					continue;
 
-				if ("dll" != extensionWithoutDot)
-				{
+				if ("dll" != extensionWithoutDot) {
 					IncludeAsset(projectBuilder, IncludeAssetTag.Compile, file);
 				}
-				else
-				{
+				else {
 					var fullFile = EscapedRelativePathFor(file, out _);
 					references.Add(fullFile);
 				}
@@ -501,8 +435,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			projectBuilder.Append(@"  </ItemGroup>").Append(k_WindowsNewline);
 
 			// Append additional non-script files that should be included in project generation.
-			if (allAssetsProjectParts.TryGetValue(assembly.name, out var additionalAssetsForProject))
-			{
+			if (allAssetsProjectParts.TryGetValue(assembly.name, out var additionalAssetsForProject)) {
 				projectBuilder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
 
 				projectBuilder.Append(additionalAssetsForProject);
@@ -522,19 +455,16 @@ namespace Microsoft.Unity.VisualStudio.Editor
 					.Union(references)
 					.Union(internalAssemblyReferences);
 
-			foreach (var reference in allReferences)
-			{
+			foreach (var reference in allReferences) {
 				string fullReference = Path.IsPathRooted(reference) ? reference : Path.Combine(ProjectDirectory, reference);
 				AppendReference(fullReference, projectBuilder);
 			}
 
 			projectBuilder.Append(@"  </ItemGroup>").Append(k_WindowsNewline);
 
-			if (0 < assembly.assemblyReferences.Length)
-			{
+			if (0 < assembly.assemblyReferences.Length) {
 				projectBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
-				foreach (var reference in assembly.assemblyReferences.Where(i => i.sourceFiles.Any(ShouldFileBePartOfSolution)))
-				{
+				foreach (var reference in assembly.assemblyReferences.Where(i => i.sourceFiles.Any(ShouldFileBePartOfSolution))) {
 					AppendProjectReference(assembly, reference, projectBuilder);
 				}
 
@@ -545,8 +475,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return projectBuilder.ToString();
 		}
 
-		private static string XmlFilename(string path)
-		{
+		private static string XmlFilename(string path) {
 			if (string.IsNullOrEmpty(path))
 				return path;
 
@@ -556,17 +485,14 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return XmlEscape(path);
 		}
 
-		private static string XmlEscape(string s)
-		{
+		private static string XmlEscape(string s) {
 			return SecurityElement.Escape(s);
 		}
 
-		internal virtual void AppendProjectReference(Assembly assembly, Assembly reference, StringBuilder projectBuilder)
-		{
+		internal virtual void AppendProjectReference(Assembly assembly, Assembly reference, StringBuilder projectBuilder) {
 		}
 
-		private void AppendReference(string fullReference, StringBuilder projectBuilder)
-		{
+		private void AppendReference(string fullReference, StringBuilder projectBuilder) {
 			var escapedFullPath = EscapedRelativePathFor(fullReference, out _);
 			projectBuilder.Append(@"    <Reference Include=""").Append(Path.GetFileNameWithoutExtension(escapedFullPath)).Append(@""">").Append(k_WindowsNewline);
 			projectBuilder.Append("      <HintPath>").Append(escapedFullPath).Append("</HintPath>").Append(k_WindowsNewline);
@@ -574,8 +500,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			projectBuilder.Append("    </Reference>").Append(k_WindowsNewline);
 		}
 
-		public string ProjectFile(Assembly assembly)
-		{
+		public string ProjectFile(Assembly assembly) {
 			return Path.Combine(ProjectDirectory, $"{m_AssemblyNameProvider.GetAssemblyName(assembly.outputPath, assembly.name)}.csproj");
 		}
 
@@ -585,25 +510,21 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		private static readonly Regex InvalidCharactersRegexPattern = new Regex(@"\?|&|\*|""|<|>|\||#|%|\^|;|:", RegexOptions.Compiled);
 #endif
 
-		public string SolutionFile()
-		{
+		public string SolutionFile() {
 			return SolutionFileImpl();
 		}
 
-		internal virtual string SolutionFileImpl()
-		{
+		internal virtual string SolutionFileImpl() {
 			return Path.Combine(ProjectDirectory.NormalizePathSeparators(), $"{InvalidCharactersRegexPattern.Replace(m_ProjectName, "_")}.sln");
 		}
 
-		internal string GetLangVersion(Assembly assembly, ResponseFileData[] responseFileData)
-		{
+		internal string GetLangVersion(Assembly assembly, ResponseFileData[] responseFileData) {
 			var langVersion = GetOtherArguments(responseFileData, "langversion").FirstOrDefault();
 			if (!string.IsNullOrEmpty(langVersion))
 				return langVersion;
 
 			var targetLanguageVersion = "latest"; // danger: latest is not the same absolute value depending on the VS version.
-			if (m_CurrentInstallation != null)
-			{
+			if (m_CurrentInstallation != null) {
 				var vsLanguageSupport = m_CurrentInstallation.LatestLanguageVersionSupported;
 				var unityLanguageSupport = UnityInstallation.LatestLanguageVersionSupported(assembly);
 
@@ -614,16 +535,14 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return targetLanguageVersion;
 		}
 
-		private static IEnumerable<string> GetOtherArguments(ResponseFileData[] responseFileData, string name)
-		{
+		private static IEnumerable<string> GetOtherArguments(ResponseFileData[] responseFileData, string name) {
 			var lines = responseFileData
 				.SelectMany(x => x.OtherArguments)
 				.Where(l => !string.IsNullOrEmpty(l))
 				.Select(l => l.Trim())
 				.Where(l => l.StartsWith("/") || l.StartsWith("-"));
 
-			foreach (var argument in lines)
-			{
+			foreach (var argument in lines) {
 				var index = argument.IndexOf(":", StringComparison.Ordinal);
 				if (index == -1)
 					continue;
@@ -631,7 +550,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				var key = argument
 					.Substring(1, index - 1)
 					.Trim();
-				
+
 				if (name != key)
 					continue;
 
@@ -644,12 +563,11 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private void SetAnalyzerAndSourceGeneratorProperties(Assembly assembly, ResponseFileData[] responseFileData, ProjectProperties properties)
-		{
+		private void SetAnalyzerAndSourceGeneratorProperties(Assembly assembly, ResponseFileData[] responseFileData, ProjectProperties properties) {
 			if (m_CurrentInstallation == null || !m_CurrentInstallation.SupportsAnalyzers)
 				return;
 
-			// Analyzers provided by VisualStudio
+			// Analyzers provided by the IDE
 			var analyzers = new List<string>(m_CurrentInstallation.GetAnalyzers());
 			var additionalFilePaths = new List<string>();
 			var rulesetPath = string.Empty;
@@ -686,15 +604,13 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			properties.AdditionalFilePaths = ToNormalizedPaths(additionalFilePaths);
 		}
 
-		private string ToNormalizedPath(string path)
-		{
+		private string ToNormalizedPath(string path) {
 			return path
 				.MakeAbsolutePath()
 				.NormalizePathSeparators();
 		}
 
-		private string[] ToNormalizedPaths(IEnumerable<string> values)
-		{
+		private string[] ToNormalizedPaths(IEnumerable<string> values) {
 			return values
 				.Where(a => !string.IsNullOrEmpty(a))
 				.Select(a => ToNormalizedPath(a))
@@ -706,12 +622,10 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			Assembly assembly,
 			ResponseFileData[] responseFileData,
 			out StringBuilder headerBuilder
-		)
-		{
+		) {
 			var projectType = ProjectTypeOf(assembly.name);
 
-			var projectProperties = new ProjectProperties
-			{
+			var projectProperties = new ProjectProperties {
 				ProjectGuid = ProjectGuid(assembly),
 				LangVersion = GetLangVersion(assembly, responseFileData),
 				AssemblyName = assembly.name,
@@ -724,7 +638,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				FlavoringProjectType = projectType + ":" + (int)projectType,
 				FlavoringBuildTarget = EditorUserBuildSettings.activeBuildTarget + ":" + (int)EditorUserBuildSettings.activeBuildTarget,
 				FlavoringUnityVersion = Application.unityVersion,
-				FlavoringPackageVersion = VisualStudioIntegration.PackageVersion(),
+				FlavoringPackageVersion = ZedIntegration.PackageVersion(),
 			};
 
 			SetAnalyzerAndSourceGeneratorProperties(assembly, responseFileData, projectProperties);
@@ -732,16 +646,14 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			GetProjectHeader(projectProperties, out headerBuilder);
 		}
 
-		private enum ProjectType
-		{
+		private enum ProjectType {
 			GamePlugins = 3,
 			Game = 1,
 			EditorPlugins = 7,
 			Editor = 5,
 		}
 
-		private static ProjectType ProjectTypeOf(string fileName)
-		{
+		private static ProjectType ProjectTypeOf(string fileName) {
 			var plugins = fileName.Contains("firstpass");
 			var editor = fileName.Contains("Editor");
 
@@ -755,13 +667,11 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return ProjectType.Game;
 		}
 
-		internal virtual void GetProjectHeader(ProjectProperties properties, out StringBuilder headerBuilder)
-		{
+		internal virtual void GetProjectHeader(ProjectProperties properties, out StringBuilder headerBuilder) {
 			headerBuilder = default;
 		}
 
-		internal void GetProjectHeaderProperties(ProjectProperties properties, StringBuilder headerBuilder)
-		{
+		internal void GetProjectHeaderProperties(ProjectProperties properties, StringBuilder headerBuilder) {
 			const string NoWarn = "0169;USG0001";
 
 			headerBuilder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
@@ -771,50 +681,41 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			headerBuilder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
 		}
 
-		internal static void GetProjectHeaderAnalyzers(ProjectProperties properties, StringBuilder headerBuilder)
-		{
-			if (!string.IsNullOrEmpty(properties.RulesetPath))
-			{
+		internal static void GetProjectHeaderAnalyzers(ProjectProperties properties, StringBuilder headerBuilder) {
+			if (!string.IsNullOrEmpty(properties.RulesetPath)) {
 				headerBuilder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
 				headerBuilder.Append(@"    <CodeAnalysisRuleSet>").Append(properties.RulesetPath).Append(@"</CodeAnalysisRuleSet>").Append(k_WindowsNewline);
 				headerBuilder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
 			}
 
-			if (properties.Analyzers.Any())
-			{
+			if (properties.Analyzers.Any()) {
 				headerBuilder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
-				foreach (var analyzer in properties.Analyzers)
-				{
+				foreach (var analyzer in properties.Analyzers) {
 					headerBuilder.Append(@"    <Analyzer Include=""").Append(analyzer).Append(@""" />").Append(k_WindowsNewline);
 				}
 				headerBuilder.Append(@"  </ItemGroup>").Append(k_WindowsNewline);
 			}
 
-			if (!string.IsNullOrEmpty(properties.AnalyzerConfigPath))
-			{
+			if (!string.IsNullOrEmpty(properties.AnalyzerConfigPath)) {
 				headerBuilder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
 				headerBuilder.Append(@"    <EditorConfigFiles Include=""").Append(properties.AnalyzerConfigPath).Append(@""" />").Append(k_WindowsNewline);
 				headerBuilder.Append(@"  </ItemGroup>").Append(k_WindowsNewline);
 			}
 
-			if (properties.AdditionalFilePaths.Any())
-			{
+			if (properties.AdditionalFilePaths.Any()) {
 				headerBuilder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
-				foreach (var additionalFile in properties.AdditionalFilePaths)
-				{
+				foreach (var additionalFile in properties.AdditionalFilePaths) {
 					headerBuilder.Append(@"    <AdditionalFiles Include=""").Append(additionalFile).Append(@""" />").Append(k_WindowsNewline);
 				}
 				headerBuilder.Append(@"  </ItemGroup>").Append(k_WindowsNewline);
 			}
 		}
 
-		internal void GetProjectHeaderVstuFlavoring(ProjectProperties properties, StringBuilder headerBuilder, bool includeProjectTypeGuids = true)
-		{
+		internal void GetProjectHeaderVstuFlavoring(ProjectProperties properties, StringBuilder headerBuilder, bool includeProjectTypeGuids = true) {
 			// Flavoring
 			headerBuilder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
 
-			if (includeProjectTypeGuids)
-			{
+			if (includeProjectTypeGuids) {
 				headerBuilder.Append(@"    <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>").Append(k_WindowsNewline);
 			}
 
@@ -827,12 +728,10 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			headerBuilder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
 		}
 
-		internal virtual void GetProjectFooter(StringBuilder footerBuilder)
-		{
+		internal virtual void GetProjectFooter(StringBuilder footerBuilder) {
 		}
 
-		private void SyncSolution(IEnumerable<Assembly> assemblies)
-		{
+		private void SyncSolution(IEnumerable<Assembly> assemblies) {
 			if (InvalidCharactersRegexPattern.IsMatch(ProjectDirectory))
 				Debug.LogWarning("Project path contains special characters, which can be an issue when opening Visual Studio");
 
@@ -841,8 +740,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			SyncSolutionFileIfNotChanged(solutionFile, SolutionText(assemblies, previousSolution));
 		}
 
-		internal virtual string SolutionText(IEnumerable<Assembly> assemblies, Solution previousSolution = null)
-		{
+		internal virtual string SolutionText(IEnumerable<Assembly> assemblies, Solution previousSolution = null) {
 			const string fileversion = "12.00";
 			const string vsversion = "15";
 
@@ -876,8 +774,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return string.Format(solutionText, fileversion, vsversion, projectEntriesText, projectConfigurationsText, propertiesText);
 		}
 
-		internal List<SolutionProjectEntry> GetSolutionProjects(IEnumerable<Assembly> assemblies, Solution previousSolution = null)
-		{
+		internal List<SolutionProjectEntry> GetSolutionProjects(IEnumerable<Assembly> assemblies, Solution previousSolution = null) {
 			var relevantAssemblies = RelevantAssembliesForMode(assemblies);
 			var generatedProjects = ToProjectEntries(relevantAssemblies).ToList();
 
@@ -885,8 +782,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			var projects = new List<SolutionProjectEntry>();
 			projects.AddRange(generatedProjects);
 
-			if (previousSolution != null)
-			{
+			if (previousSolution != null) {
 				// Add all projects that were previously in the solution and that are not generated by Unity, nor generated in the project root directory
 				var externalProjects = previousSolution.Projects
 					.Where(p => p.IsSolutionFolderProjectFactory() || !FileUtility.IsFileInProjectRootDirectory(p.FileName))
@@ -898,15 +794,12 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return projects;
 		}
 
-		private static IEnumerable<Assembly> RelevantAssembliesForMode(IEnumerable<Assembly> assemblies)
-		{
+		private static IEnumerable<Assembly> RelevantAssembliesForMode(IEnumerable<Assembly> assemblies) {
 			return assemblies.Where(i => ScriptingLanguage.CSharp == ScriptingLanguageFor(i));
 		}
 
-		private static string GetPropertiesText(SolutionProperties[] array)
-		{
-			if (array == null || array.Length == 0)
-			{
+		private static string GetPropertiesText(SolutionProperties[] array) {
+			if (array == null || array.Length == 0) {
 				// HideSolution by default
 				array = new[] {
 					new SolutionProperties() {
@@ -918,8 +811,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 			var result = new StringBuilder();
 
-			for (var i = 0; i < array.Length; i++)
-			{
+			for (var i = 0; i < array.Length; i++) {
 				if (i > 0)
 					result.Append(k_WindowsNewline);
 
@@ -928,8 +820,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				result.Append($"\tGlobalSection({properties.Name}) = {properties.Type}");
 				result.Append(k_WindowsNewline);
 
-				foreach (var entry in properties.Entries)
-				{
+				foreach (var entry in properties.Entries) {
 					result.Append($"\t\t{entry.Key} = {entry.Value}");
 					result.Append(k_WindowsNewline);
 				}
@@ -944,8 +835,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		/// Get a Project("{guid}") = "MyProject", "MyProject.unityproj", "{projectguid}"
 		/// entry for each relevant language
 		/// </summary>
-		private string GetProjectEntriesText(IEnumerable<SolutionProjectEntry> entries)
-		{
+		private string GetProjectEntriesText(IEnumerable<SolutionProjectEntry> entries) {
 			var projectEntries = entries.Select(entry => string.Format(
 				m_SolutionProjectEntryTemplate,
 				entry.ProjectFactoryGuid, entry.Name, entry.FileName, entry.ProjectGuid, entry.Metadata
@@ -954,12 +844,9 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return string.Join(k_WindowsNewline, projectEntries.ToArray());
 		}
 
-		private IEnumerable<SolutionProjectEntry> ToProjectEntries(IEnumerable<Assembly> assemblies)
-		{
-			foreach (var assembly in assemblies)
-			{
-				yield return new SolutionProjectEntry()
-				{
+		private IEnumerable<SolutionProjectEntry> ToProjectEntries(IEnumerable<Assembly> assemblies) {
+			foreach (var assembly in assemblies) {
+				yield return new SolutionProjectEntry() {
 					ProjectFactoryGuid = SolutionGuid(assembly),
 					Name = assembly.name,
 					FileName = Path.GetFileName(ProjectFile(assembly)),
@@ -972,8 +859,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		/// <summary>
 		/// Generate the active configuration string for a given project guid
 		/// </summary>
-		private string GetProjectActiveConfigurations(string projectGuid)
-		{
+		private string GetProjectActiveConfigurations(string projectGuid) {
 			const string solutionProjectConfigurationTemplate =
 				"\t\t{{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU" + k_WindowsNewline
 				+ "\t\t{{{0}}}.Debug|Any CPU.Build.0 = Debug|Any CPU" + k_WindowsNewline
@@ -985,15 +871,13 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				projectGuid);
 		}
 
-		internal string EscapedRelativePathFor(string file, out UnityEditor.PackageManager.PackageInfo packageInfo)
-		{
+		internal string EscapedRelativePathFor(string file, out UnityEditor.PackageManager.PackageInfo packageInfo) {
 			var projectDir = ProjectDirectory.NormalizePathSeparators();
 			file = file.NormalizePathSeparators();
 			var path = SkipPathPrefix(file, projectDir);
 
 			packageInfo = m_AssemblyNameProvider.FindForAssetPath(path.NormalizeWindowsToUnix());
-			if (packageInfo != null)
-			{
+			if (packageInfo != null) {
 				// We have to normalize the path, because the PackageManagerRemapper assumes
 				// dir seperators will be os specific.
 				var absolutePath = FileUtility.GetAbsolutePath(path.NormalizePathSeparators());
@@ -1003,35 +887,29 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return XmlFilename(path);
 		}
 
-		internal static string SkipPathPrefix(string path, string prefix)
-		{
+		internal static string SkipPathPrefix(string path, string prefix) {
 			if (path.StartsWith($"{prefix}{Path.DirectorySeparatorChar}") && (path.Length > prefix.Length))
 				return path.Substring(prefix.Length + 1);
 			return path;
 		}
 
-		internal static string GetProjectExtension()
-		{
+		internal static string GetProjectExtension() {
 			return ".csproj";
 		}
 
-		internal string ProjectGuid(string assemblyName)
-		{
+		internal string ProjectGuid(string assemblyName) {
 			return m_GUIDGenerator.ProjectGuid(m_ProjectName, assemblyName);
 		}
 
-		internal string ProjectGuid(Assembly assembly)
-		{
+		internal string ProjectGuid(Assembly assembly) {
 			return ProjectGuid(m_AssemblyNameProvider.GetAssemblyName(assembly.outputPath, assembly.name));
 		}
 
-		private string SolutionGuid(Assembly assembly)
-		{
+		private string SolutionGuid(Assembly assembly) {
 			return m_GUIDGenerator.SolutionGuid(m_ProjectName, ScriptingLanguageFor(assembly));
 		}
 
-		private static string GetRootNamespace(Assembly assembly)
-		{
+		private static string GetRootNamespace(Assembly assembly) {
 #if UNITY_2020_2_OR_NEWER
 			return assembly.rootNamespace;
 #else
@@ -1040,17 +918,13 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		}
 	}
 
-	public static class SolutionGuidGenerator
-	{
-		public static string GuidForProject(string projectName)
-		{
+	public static class SolutionGuidGenerator {
+		public static string GuidForProject(string projectName) {
 			return ComputeGuidHashFor(projectName + "salt");
 		}
 
-		public static string GuidForSolution(string projectName, ScriptingLanguage language)
-		{
-			if (language == ScriptingLanguage.CSharp)
-			{
+		public static string GuidForSolution(string projectName, ScriptingLanguage language) {
+			if (language == ScriptingLanguage.CSharp) {
 				// GUID for a C# class library: http://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
 				return "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC";
 			}
@@ -1058,20 +932,17 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return ComputeGuidHashFor(projectName);
 		}
 
-		private static string ComputeGuidHashFor(string input)
-		{
+		private static string ComputeGuidHashFor(string input) {
 			var hash = MD5.Create().ComputeHash(Encoding.Default.GetBytes(input));
 			return HashAsGuid(HashToString(hash));
 		}
 
-		private static string HashAsGuid(string hash)
-		{
+		private static string HashAsGuid(string hash) {
 			var guid = hash.Substring(0, 8) + "-" + hash.Substring(8, 4) + "-" + hash.Substring(12, 4) + "-" + hash.Substring(16, 4) + "-" + hash.Substring(20, 12);
 			return guid.ToUpper();
 		}
 
-		private static string HashToString(byte[] bs)
-		{
+		private static string HashToString(byte[] bs) {
 			var sb = new StringBuilder();
 			foreach (byte b in bs)
 				sb.Append(b.ToString("x2"));

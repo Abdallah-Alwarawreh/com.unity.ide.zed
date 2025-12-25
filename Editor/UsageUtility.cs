@@ -11,32 +11,25 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
+namespace Zed.Unity.Editor {
 	[Serializable]
-	internal class FileUsage
-	{
+	internal class FileUsage {
 		public string Path;
 		public string[] GameObjectPath;
 	}
 
-	internal static class UsageUtility
-	{
-		internal static void ShowUsage(string json)
-		{
-			try
-			{
+	internal static class UsageUtility {
+		internal static void ShowUsage(string json) {
+			try {
 				var usage = JsonUtility.FromJson<FileUsage>(json);
 				ShowUsage(usage.Path, usage.GameObjectPath);
 			}
-			catch (Exception)
-			{
+			catch (Exception) {
 				// ignore malformed request
 			}
 		}
 
-		internal static void ShowUsage(string path, string[] gameObjectPath)
-		{
+		internal static void ShowUsage(string path, string[] gameObjectPath) {
 			path = FileUtility.MakeRelativeToProjectPath(path);
 			if (path == null)
 				return;
@@ -46,8 +39,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 			EditorUtility.FocusProjectWindow();
 
-			switch (extension)
-			{
+			switch (extension) {
 				case ".unity":
 					ShowSceneUsage(path, gameObjectPath);
 					break;
@@ -59,19 +51,16 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private static void ShowSceneUsage(string scenePath, string[] gameObjectPath)
-		{
+		private static void ShowSceneUsage(string scenePath, string[] gameObjectPath) {
 			var scene = SceneManager.GetSceneByPath(scenePath.Replace(Path.DirectorySeparatorChar, '/'));
-			if (!scene.isLoaded)
-			{
+			if (!scene.isLoaded) {
 				var result = EditorUtility.DisplayDialogComplex("Show Usage",
 						 $"Do you want to open \"{Path.GetFileName(scenePath)}\"?",
 						 "Open Scene",
 						 "Cancel",
 						 "Open Scene (additive)");
 
-				switch (result)
-				{
+				switch (result) {
 					case 0:
 						EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
 						scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
@@ -87,8 +76,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			ShowSceneUsage(scene, gameObjectPath);
 		}
 
-		private static void ShowSceneUsage(Scene scene, string[] gameObjectPath)
-		{
+		private static void ShowSceneUsage(Scene scene, string[] gameObjectPath) {
 			if (gameObjectPath == null || gameObjectPath.Length == 0)
 				return;
 
@@ -96,15 +84,12 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			if (go == null)
 				return;
 
-			for (var ni = 1; ni < gameObjectPath.Length; ni++)
-			{
+			for (var ni = 1; ni < gameObjectPath.Length; ni++) {
 				var transform = go.transform;
-				for (var i = 0; i < transform.childCount; i++)
-				{
+				for (var i = 0; i < transform.childCount; i++) {
 					var child = transform.GetChild(i);
 					var childgo = child.gameObject;
-					if (childgo.name == gameObjectPath[ni])
-					{
+					if (childgo.name == gameObjectPath[ni]) {
 						go = childgo;
 						break;
 					}

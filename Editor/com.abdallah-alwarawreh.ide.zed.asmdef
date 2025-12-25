@@ -1,5 +1,5 @@
 {
-    "name": "Unity.VisualStudio.Editor",
+    "name": "Unity.Zed.Editor",
     "references": [],
     "includePlatforms": [
         "Editor"

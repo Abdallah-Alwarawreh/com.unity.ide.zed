@@ -2,17 +2,14 @@
 
 using UnityEditor.TestTools.TestRunner.Api;
 
-namespace Microsoft.Unity.VisualStudio.Editor.Testing
-{
+namespace Zed.Unity.Editor.Testing {
 	[Serializable]
-	internal class TestResultAdaptorContainer
-	{
+	internal class TestResultAdaptorContainer {
 		public TestResultAdaptor[] TestResultAdaptors;
 	}
 
 	[Serializable]
-	internal class TestResultAdaptor
-	{
+	internal class TestResultAdaptor {
 		public string Name;
 		public string FullName;
 
@@ -28,8 +25,7 @@ namespace Microsoft.Unity.VisualStudio.Editor.Testing
 
 		public int Parent;
 
-		public TestResultAdaptor(ITestResultAdaptor testResultAdaptor, int parent)
-		{
+		public TestResultAdaptor(ITestResultAdaptor testResultAdaptor, int parent) {
 			Name = testResultAdaptor.Name;
 			FullName = testResultAdaptor.FullName;
 
@@ -38,8 +34,7 @@ namespace Microsoft.Unity.VisualStudio.Editor.Testing
 			InconclusiveCount = testResultAdaptor.InconclusiveCount;
 			SkipCount = testResultAdaptor.SkipCount;
 
-			switch (testResultAdaptor.TestStatus)
-			{
+			switch (testResultAdaptor.TestStatus) {
 				case UnityEditor.TestTools.TestRunner.Api.TestStatus.Passed:
 					TestStatus = TestStatusAdaptor.Passed;
 					break;

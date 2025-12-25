@@ -8,19 +8,16 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using Microsoft.Unity.VisualStudio.Editor.Messaging;
-using Microsoft.Unity.VisualStudio.Editor.Testing;
+using Zed.Unity.Editor.Messaging;
+using Zed.Unity.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
-using MessageType = Microsoft.Unity.VisualStudio.Editor.Messaging.MessageType;
+using MessageType = Zed.Unity.Editor.Messaging.MessageType;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
+namespace Zed.Unity.Editor {
 	[InitializeOnLoad]
-	internal class VisualStudioIntegration
-	{
-		class Client
-		{
+	internal class ZedIntegration {
+		class Client {
 			public IPEndPoint EndPoint { get; set; }
 			public double LastMessage { get; set; }
 		}
@@ -32,25 +29,21 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		private static readonly object _incomingLock = new object();
 		private static readonly object _clientsLock = new object();
 
-		static VisualStudioIntegration()
-		{
-			if (!VisualStudioEditor.IsEnabled)
+		static ZedIntegration() {
+			if (!ZedEditor.IsEnabled)
 				return;
 
-			RunOnceOnUpdate(() =>
-			{
+			RunOnceOnUpdate(() => {
 				// Despite using ReuseAddress|!ExclusiveAddressUse, we can fail here:
 				// - if another application is using this port with exclusive access
 				// - or if the firewall is not properly configured
 				var messagingPort = MessagingPort();
 
-				try
-				{
+				try {
 					_messager = Messager.BindTo(messagingPort);
 					_messager.ReceiveMessage += ReceiveMessage;
 				}
-				catch (SocketException)
-				{
+				catch (SocketException) {
 					// We'll have a chance to try to rebind on next domain reload
 					Debug.LogWarning($"Unable to use UDP port {messagingPort} for VS/Unity messaging. You should check if another process is already bound to this port or if your firewall settings are compatible.");
 				}
@@ -61,12 +54,10 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			EditorApplication.update += OnUpdate;
 		}
 
-		private static void RunOnceOnUpdate(Action action)
-		{
+		private static void RunOnceOnUpdate(Action action) {
 			var callback = null as EditorApplication.CallbackFunction;
 
-			callback = () =>
-			{
+			callback = () => {
 				EditorApplication.update -= callback;
 				action();
 			};
@@ -74,42 +65,33 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			EditorApplication.update += callback;
 		}
 
-		private static void RunOnShutdown(Action action)
-		{
+		private static void RunOnShutdown(Action action) {
 #pragma warning disable UAC0006
-		AppDomain.CurrentDomain.DomainUnload += (_, __) => action();
+			AppDomain.CurrentDomain.DomainUnload += (_, __) => action();
 #pragma warning restore UAC0006
 		}
 
-		private static int DebuggingPort()
-		{
+		private static int DebuggingPort() {
 			return 56000 + (System.Diagnostics.Process.GetCurrentProcess().Id % 1000);
 		}
 
-		private static int MessagingPort()
-		{
+		private static int MessagingPort() {
 			return DebuggingPort() + 2;
 		}
 
-		private static void ReceiveMessage(object sender, MessageEventArgs args)
-		{
+		private static void ReceiveMessage(object sender, MessageEventArgs args) {
 			OnMessage(args.Message);
 		}
 
-		private static void OnUpdate()
-		{
-			lock (_incomingLock)
-			{
-				while (_incoming.Count > 0)
-				{
+		private static void OnUpdate() {
+			lock (_incomingLock) {
+				while (_incoming.Count > 0) {
 					ProcessIncoming(_incoming.Dequeue());
 				}
 			}
 
-			lock (_clientsLock)
-			{
-				foreach (var client in _clients.Values.ToArray())
-				{
+			lock (_clientsLock) {
+				foreach (var client in _clients.Values.ToArray()) {
 					// EditorApplication.timeSinceStartup: The time since the editor was started, in seconds, not reset when starting play mode.
 					if (EditorApplication.timeSinceStartup - client.LastMessage > 4)
 						_clients.Remove(client.EndPoint);
@@ -117,23 +99,18 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private static void AddMessage(Message message)
-		{
-			lock (_incomingLock)
-			{
+		private static void AddMessage(Message message) {
+			lock (_incomingLock) {
 				_incoming.Enqueue(message);
 			}
 		}
 
-		private static void ProcessIncoming(Message message)
-		{
-			lock (_clientsLock)
-			{
+		private static void ProcessIncoming(Message message) {
+			lock (_clientsLock) {
 				CheckClient(message);
 			}
 
-			switch (message.Type)
-			{
+			switch (message.Type) {
 				case MessageType.Ping:
 					Answer(message, MessageType.Pong);
 					break;
@@ -177,40 +154,34 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private static void CheckClient(Message message)
-		{
+		private static void CheckClient(Message message) {
 			var endPoint = message.Origin;
 
-			if (!_clients.TryGetValue(endPoint, out var client))
-			{
-				client = new Client
-				{
+			if (!_clients.TryGetValue(endPoint, out var client)) {
+				client = new Client {
 					EndPoint = endPoint,
 					LastMessage = EditorApplication.timeSinceStartup
 				};
 
 				_clients.Add(endPoint, client);
 			}
-			else
-			{
+			else {
 				client.LastMessage = EditorApplication.timeSinceStartup;
 			}
 		}
 
-		internal static string PackageVersion()
-		{
-			var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(VisualStudioIntegration).Assembly);
-			return package.version;
+		internal static string PackageVersion() {
+			var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(ZedIntegration).Assembly);
+			return package?.version ?? "1.0.0";
 		}
 
 		// Taken from UnityEditor
 		internal enum AssetPipelineAutoRefreshMode { Disabled = 0, Enabled = 1, EnabledOutsidePlaymode = 2 }
 
-		private static void Refresh()
-		{
+		private static void Refresh() {
 			// If the user disabled auto-refresh in Unity, do not try to force refresh the Asset database
 			var legacySetting = EditorPrefs.GetBool("kAutoRefresh");
-			var setting = (AssetPipelineAutoRefreshMode) EditorPrefs.GetInt("kAutoRefreshMode", Convert.ToInt32(legacySetting));
+			var setting = (AssetPipelineAutoRefreshMode)EditorPrefs.GetInt("kAutoRefreshMode", Convert.ToInt32(legacySetting));
 
 			if (setting == AssetPipelineAutoRefreshMode.Disabled)
 				return;
@@ -224,18 +195,15 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			RunOnceOnUpdate(AssetDatabase.Refresh);
 		}
 
-		private static void OnMessage(Message message)
-		{
+		private static void OnMessage(Message message) {
 			AddMessage(message);
 		}
 
-		private static void Answer(Client client, MessageType answerType, string answerValue)
-		{
+		private static void Answer(Client client, MessageType answerType, string answerValue) {
 			Answer(client.EndPoint, answerType, answerValue);
 		}
 
-		private static void Answer(Message message, MessageType answerType, string answerValue = "")
-		{
+		private static void Answer(Message message, MessageType answerType, string answerValue = "") {
 			var targetEndPoint = message.Origin;
 
 			Answer(
@@ -244,13 +212,11 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				answerValue);
 		}
 
-		private static void Answer(IPEndPoint targetEndPoint, MessageType answerType, string answerValue)
-		{
+		private static void Answer(IPEndPoint targetEndPoint, MessageType answerType, string answerValue) {
 			_messager?.SendMessage(targetEndPoint, answerType, answerValue);
 		}
 
-		private static void Shutdown()
-		{
+		private static void Shutdown() {
 			if (_messager == null)
 				return;
 
@@ -259,12 +225,9 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			_messager = null;
 		}
 
-		internal static void BroadcastMessage(MessageType type, string value)
-		{
-			lock (_clientsLock)
-			{
-				foreach (var client in _clients.Values.ToArray())
-				{
+		internal static void BroadcastMessage(MessageType type, string value) {
+			lock (_clientsLock) {
+				foreach (var client in _clients.Values.ToArray()) {
 					Answer(client, type, value);
 				}
 			}

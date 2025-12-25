@@ -3,17 +3,14 @@ using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
 
-namespace Microsoft.Unity.VisualStudio.Editor.Testing
-{
+namespace Zed.Unity.Editor.Testing {
 	[InitializeOnLoad]
-	internal class TestRunnerApiListener
-	{
+	internal class TestRunnerApiListener {
 		private static readonly TestRunnerApi _testRunnerApi;
 		private static readonly TestRunnerCallbacks _testRunnerCallbacks;
 
-		static TestRunnerApiListener()
-		{
-			if (!VisualStudioEditor.IsEnabled)
+		static TestRunnerApiListener() {
+			if (!ZedEditor.IsEnabled)
 				return;
 
 			_testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
@@ -22,18 +19,15 @@ namespace Microsoft.Unity.VisualStudio.Editor.Testing
 			_testRunnerApi.RegisterCallbacks(_testRunnerCallbacks);
 		}
 
-		public static void RetrieveTestList(string mode)
-		{
-			RetrieveTestList((TestMode) Enum.Parse(typeof(TestMode), mode));
+		public static void RetrieveTestList(string mode) {
+			RetrieveTestList((TestMode)Enum.Parse(typeof(TestMode), mode));
 		}
 
-		private static void RetrieveTestList(TestMode mode)
-		{
+		private static void RetrieveTestList(TestMode mode) {
 			_testRunnerApi?.RetrieveTestList(mode, ta => _testRunnerCallbacks.TestListRetrieved(mode, ta));
 		}
 
-		public static void ExecuteTests(string command)
-		{
+		public static void ExecuteTests(string command) {
 			// ExecuteTests format:
 			// TestMode:FullName
 
@@ -44,11 +38,10 @@ namespace Microsoft.Unity.VisualStudio.Editor.Testing
 			var testMode = (TestMode)Enum.Parse(typeof(TestMode), command.Substring(0, index));
 			var filter = command.Substring(index + 1);
 
-			ExecuteTests(new Filter { testMode = testMode, testNames = new [] { filter } });
+			ExecuteTests(new Filter { testMode = testMode, testNames = new[] { filter } });
 		}
 
-		private static void ExecuteTests(Filter filter)
-		{
+		private static void ExecuteTests(Filter filter) {
 			_testRunnerApi?.Execute(new ExecutionSettings(filter));
 		}
 	}

@@ -5,11 +5,9 @@
  *--------------------------------------------------------------------------------------------*/
 using System;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
+namespace Zed.Unity.Editor {
 	[Flags]
-	public enum ProjectGenerationFlag
-	{
+	public enum ProjectGenerationFlag {
 		None = 0,
 		Embedded = 1,
 		Local = 2,

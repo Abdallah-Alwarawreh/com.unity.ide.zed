@@ -5,29 +5,23 @@
 using System.IO;
 using System.Text;
 
-namespace Microsoft.Unity.VisualStudio.Editor.Messaging
-{
-	internal class Serializer
-	{
+namespace Zed.Unity.Editor.Messaging {
+	internal class Serializer {
 		private readonly MemoryStream _stream;
 		private readonly BinaryWriter _writer;
 
-		public Serializer()
-		{
+		public Serializer() {
 			_stream = new MemoryStream();
 			_writer = new BinaryWriter(_stream);
 		}
 
-		public void WriteInt32(int i)
-		{
+		public void WriteInt32(int i) {
 			_writer.Write(i);
 		}
 
-		public void WriteString(string s)
-		{
+		public void WriteString(string s) {
 			var bytes = Encoding.UTF8.GetBytes(s ?? "");
-			if (bytes.Length > 0)
-			{
+			if (bytes.Length > 0) {
 				_writer.Write(bytes.Length);
 				_writer.Write(bytes);
 			}
@@ -35,8 +29,7 @@ namespace Microsoft.Unity.VisualStudio.Editor.Messaging
 				_writer.Write(0);
 		}
 
-		public byte[] Buffer()
-		{
+		public byte[] Buffer() {
 			return _stream.ToArray();
 		}
 	}

@@ -7,14 +7,10 @@ using System;
 using UnityEditor;
 using UnityEditor.Compilation;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal static class UnityInstallation
-	{
-		public static bool IsMainUnityEditorProcess
-		{
-			get
-			{
+namespace Zed.Unity.Editor {
+	internal static class UnityInstallation {
+		public static bool IsMainUnityEditorProcess {
+			get {
 #if UNITY_2020_2_OR_NEWER
 				if (UnityEditor.AssetDatabase.IsAssetImportWorkerProcess())
 					return false;
@@ -38,8 +34,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private static readonly Lazy<bool> _lazyIsInSafeMode = new Lazy<bool>(() =>
-		{
+		private static readonly Lazy<bool> _lazyIsInSafeMode = new Lazy<bool>(() => {
 			// internal static extern bool isInSafeMode { get {} }
 			var ieu = typeof(EditorUtility);
 			var pinfo = ieu.GetProperty("isInSafeMode", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
@@ -49,8 +44,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return Convert.ToBoolean(pinfo.GetValue(null));
 		});
 		public static bool IsInSafeMode => _lazyIsInSafeMode.Value;
-		public static Version LatestLanguageVersionSupported(Assembly assembly)
-		{
+		public static Version LatestLanguageVersionSupported(Assembly assembly) {
 #if UNITY_2020_2_OR_NEWER
 			if (assembly?.compilerOptions != null && Version.TryParse(assembly.compilerOptions.LanguageVersion, out var result))
 				return result;

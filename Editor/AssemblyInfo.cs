@@ -1,4 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("Unity.VisualStudio.EditorTests")]
+[assembly: InternalsVisibleTo("Unity.Zed.EditorTests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]

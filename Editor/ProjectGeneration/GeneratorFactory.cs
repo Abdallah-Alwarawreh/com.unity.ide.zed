@@ -6,21 +6,17 @@
 
 using System;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal enum GeneratorStyle
-	{
+namespace Zed.Unity.Editor {
+	internal enum GeneratorStyle {
 		SDK = 1,
 		Legacy = 2,
 	}
 
-	internal static class GeneratorFactory
-	{
+	internal static class GeneratorFactory {
 		private static readonly SdkStyleProjectGeneration _sdkStyleProjectGeneration = new SdkStyleProjectGeneration();
 		private static readonly LegacyStyleProjectGeneration _legacyStyleProjectGeneration = new LegacyStyleProjectGeneration();
 
-		public static IGenerator GetInstance(GeneratorStyle style)
-		{
+		public static IGenerator GetInstance(GeneratorStyle style) {
 			var forceStyleString = OnSelectingCSProjectStyle();
 			if (forceStyleString != null && Enum.TryParse<GeneratorStyle>(forceStyleString, out var forceStyle))
 				style = forceStyle;
@@ -33,10 +29,8 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			throw new ArgumentException("Unknown generator style");
 		}
 
-		private static string OnSelectingCSProjectStyle()
-		{
-			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(nameof(OnSelectingCSProjectStyle)))
-			{
+		private static string OnSelectingCSProjectStyle() {
+			foreach (var method in TypeCacheHelper.GetPostProcessorCallbacks(nameof(OnSelectingCSProjectStyle))) {
 				object retValue = method.Invoke(null, Array.Empty<object>());
 				if (method.ReturnType != typeof(string))
 					continue;

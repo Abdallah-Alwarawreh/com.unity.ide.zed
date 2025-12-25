@@ -7,15 +7,12 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	internal static class FileUtility
-	{
+namespace Zed.Unity.Editor {
+	internal static class FileUtility {
 		public const char WinSeparator = '\\';
 		public const char UnixSeparator = '/';
 
-		public static string GetAbsolutePath(string path)
-		{
+		public static string GetAbsolutePath(string path) {
 #if UNITY_6000_5_OR_NEWER
 			return UnityEditor.FileUtil
 				.PathToAbsolutePath(path)
@@ -25,20 +22,17 @@ namespace Microsoft.Unity.VisualStudio.Editor
 #endif
 		}
 
-		public static string GetPackageAssetFullPath(params string[] components)
-		{
+		public static string GetPackageAssetFullPath(params string[] components) {
 			// Unity has special IO handling of Packages and will resolve those path to the right package location
-			return GetAbsolutePath(Path.Combine("Packages", "com.unity.ide.visualstudio", Path.Combine(components)));
+			return GetAbsolutePath(Path.Combine("Packages", "com.abdallah-alwarawreh.ide.zed", Path.Combine(components)));
 		}
 
-		public static string GetAssetFullPath(string asset)
-		{
+		public static string GetAssetFullPath(string asset) {
 			var basePath = GetAbsolutePath(Path.Combine(Application.dataPath, ".."));
 			return GetAbsolutePath(Path.Combine(basePath, NormalizePathSeparators(asset)));
 		}
 
-		public static string NormalizePathSeparators(this string path)
-		{
+		public static string NormalizePathSeparators(this string path) {
 			if (string.IsNullOrEmpty(path))
 				return path;
 
@@ -50,16 +44,14 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return path.Replace(string.Concat(WinSeparator, WinSeparator), WinSeparator.ToString());
 		}
 
-		public static string NormalizeWindowsToUnix(this string path)
-		{
+		public static string NormalizeWindowsToUnix(this string path) {
 			if (string.IsNullOrEmpty(path))
 				return path;
 
 			return path.Replace(WinSeparator, UnixSeparator);
 		}
 
-		internal static bool IsFileInProjectRootDirectory(string fileName)
-		{
+		internal static bool IsFileInProjectRootDirectory(string fileName) {
 			var relative = MakeRelativeToProjectPath(fileName);
 			if (string.IsNullOrEmpty(relative))
 				return false;
@@ -67,15 +59,13 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return relative == Path.GetFileName(relative);
 		}
 
-		public static string MakeAbsolutePath(this string path)
-		{
+		public static string MakeAbsolutePath(this string path) {
 			if (string.IsNullOrEmpty(path)) { return string.Empty; }
 			return Path.IsPathRooted(path) ? path : GetAbsolutePath(path);
 		}
-		
+
 		// returns null if outside of the project scope
-		internal static string MakeRelativeToProjectPath(string fileName)
-		{
+		internal static string MakeRelativeToProjectPath(string fileName) {
 			var basePath = GetAbsolutePath(Path.Combine(Application.dataPath, ".."));
 			fileName = NormalizePathSeparators(fileName);
 

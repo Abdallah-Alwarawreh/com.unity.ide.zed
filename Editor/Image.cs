@@ -5,23 +5,19 @@
 using System;
 using System.IO;
 
-namespace Microsoft.Unity.VisualStudio.Editor
-{
-	public sealed class Image : IDisposable
-	{
+namespace Zed.Unity.Editor {
+	public sealed class Image : IDisposable {
 
 		long position;
 		Stream stream;
 
-		Image(Stream stream)
-		{
+		Image(Stream stream) {
 			this.stream = stream;
 			this.position = stream.Position;
 			this.stream.Position = 0;
 		}
 
-		bool Advance(int length)
-		{
+		bool Advance(int length) {
 			if (stream.Position + length >= stream.Length)
 				return false;
 
@@ -29,8 +25,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return true;
 		}
 
-		bool MoveTo(uint position)
-		{
+		bool MoveTo(uint position) {
 			if (position >= stream.Length)
 				return false;
 
@@ -38,27 +33,23 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return true;
 		}
 
-		void IDisposable.Dispose()
-		{
+		void IDisposable.Dispose() {
 			stream.Position = position;
 		}
 
-		ushort ReadUInt16()
-		{
+		ushort ReadUInt16() {
 			return (ushort)(stream.ReadByte()
 				| (stream.ReadByte() << 8));
 		}
 
-		uint ReadUInt32()
-		{
+		uint ReadUInt32() {
 			return (uint)(stream.ReadByte()
 				| (stream.ReadByte() << 8)
 				| (stream.ReadByte() << 16)
 				| (stream.ReadByte() << 24));
 		}
 
-		bool IsManagedAssembly()
-		{
+		bool IsManagedAssembly() {
 			if (stream.Length < 318)
 				return false;
 			if (ReadUInt16() != 0x5a4d)
@@ -77,8 +68,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			return ReadUInt32() != 0;
 		}
 
-		public static bool IsAssembly(string file)
-		{
+		public static bool IsAssembly(string file) {
 			if (file == null)
 				throw new ArgumentNullException("file");
 
@@ -86,8 +76,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				return IsAssembly(stream);
 		}
 
-		public static bool IsAssembly(Stream stream)
-		{
+		public static bool IsAssembly(Stream stream) {
 			if (stream == null)
 				throw new ArgumentNullException(nameof(stream));
 			if (!stream.CanRead)
