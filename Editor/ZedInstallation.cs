@@ -196,7 +196,6 @@ namespace Zed.Unity.Editor {
 				? $"-a \"{application}\" \"{directory}\""
 				: $"-a \"{application}\" \"{path}:{line}:{column}\"";
 
-			UnityEngine.Debug.Log($"[Zed] Running command: open {arguments}");
 			ProcessRunner.Start(ProcessRunner.ProcessStartInfoFor("open", arguments, redirect: false, shell: true));
 #else
             // On Windows and Linux, use "zed" CLI from PATH (not the full app path)
@@ -205,7 +204,6 @@ namespace Zed.Unity.Editor {
                 ? $"\"{directory}\""
                 : $"\"{directory}\" \"{path}:{line}:{column}\"";
 
-            UnityEngine.Debug.Log($"[Zed] Running command: zed {arguments}");
             ProcessRunner.Start(ProcessRunner.ProcessStartInfoFor("zed", arguments, redirect: false));
 #endif
 
